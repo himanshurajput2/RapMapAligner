@@ -1,5 +1,7 @@
 # What is RapMap?
 
+[![Join the chat at https://gitter.im/COMBINE-lab/RapMap](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/COMBINE-lab/RapMap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 RapMap is a testing ground for ideas in lightweight / quasi / pseudo transcriptome alignment.  That means that, at this point, it is somewhat experimental and there are no guarantees on stability / compatibility between commits.  Currently, RapMap is a stand-alone quasi-mapper that can be used with other tools.  It is also being used as part of [Sailfish](https://github.com/kingsfordgroup/sailfish) and [Salmon](https://github.com/COMBINE-lab/salmon).  Eventually, the hope is to create and stabilize an API so that it can be used as a library from other tools.
 
 Lightweight / quasi / pseudo-alignment is the term I'm using here for the type of information required for certain tasks (e.g. 
