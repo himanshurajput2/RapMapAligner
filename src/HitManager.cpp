@@ -22,7 +22,13 @@ namespace rapmap {
                 bool hitRC = firstHit.queryRC;
                 bool txpRC = ph.tqvec[0].txpPosInfo.isRC();
                 bool isFwd = (hitRC == txpRC);
-                int32_t hitPos = firstHit.txpPosInfo.pos() - firstHit.queryPos;
+                int32_t hitPos = 0;
+                // The read maps to the target in the forward orientation
+                if (isFwd) {
+                    hitPos = firstHit.txpPosInfo.pos() - firstHit.queryPos;
+                } else { // The read maps to the target in the reverse complement orientation
+                    hitPos = firstHit.txpPosInfo.pos() + firstHit.queryPos;
+                }
 
                 // determine forward
                 hits.emplace_back(tid, hitPos, isFwd, readLen);
