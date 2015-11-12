@@ -100,7 +100,8 @@ void processReadsSingleSA(single_parser * parser,
     	std::shared_ptr<spdlog::logger> outQueue,
         HitCounters& hctr,
         uint32_t maxNumHits,
-        bool noOutput) {
+        bool noOutput,
+        bool strictCheck) {
 
     auto& txpNames = rmi.txpNames;
     std::vector<uint32_t>& txpOffsets = rmi.txpOffsets;
@@ -130,7 +131,7 @@ void processReadsSingleSA(single_parser * parser,
             readLen = j->data[i].seq.length();
             ++hctr.numReads;
             hits.clear();
-            hitCollector(j->data[i].seq, hits, saSearcher, MateStatus::SINGLE_END);
+            hitCollector(j->data[i].seq, hits, saSearcher, MateStatus::SINGLE_END, strictCheck);
             auto numHits = hits.size();
             hctr.totHits += numHits;
 
@@ -201,7 +202,8 @@ void processReadsPairSA(paired_parser* parser,
 	    std::shared_ptr<spdlog::logger> outQueue,
         HitCounters& hctr,
         uint32_t maxNumHits,
-        bool noOutput) {
+        bool noOutput,
+        bool strictCheck) {
     auto& txpNames = rmi.txpNames;
     std::vector<uint32_t>& txpOffsets = rmi.txpOffsets;
     auto& txpLens = rmi.txpLens;
@@ -239,10 +241,12 @@ void processReadsPairSA(paired_parser* parser,
 
             bool lh = hitCollector(j->data[i].first.seq,
                         leftHits, saSearcher,
-                        MateStatus::PAIRED_END_LEFT);
+                        MateStatus::PAIRED_END_LEFT,
+                        strictCheck);
             bool rh = hitCollector(j->data[i].second.seq,
                         rightHits, saSearcher,
-                        MateStatus::PAIRED_END_RIGHT);
+                        MateStatus::PAIRED_END_RIGHT,
+                        strictCheck);
 
             rapmap::utils::mergeLeftRightHits(
                     leftHits, rightHits, jointHits,
@@ -310,8 +314,8 @@ int rapMapSAMap(int argc, char* argv[]) {
     TCLAP::ValueArg<uint32_t> numThreads("t", "numThreads", "Number of threads to use", false, 1, "positive integer");
     TCLAP::ValueArg<uint32_t> maxNumHits("m", "maxNumHits", "Reads mapping to more than this many loci are discarded", false, 200, "positive integer");
     TCLAP::ValueArg<std::string> outname("o", "output", "The output file (default: stdout)", false, "", "path");
-    TCLAP::SwitchArg endCollectorSwitch("e", "endCollector", "Use the simpler (and faster) \"end\" collector as opposed to the more sophisticated \"skipping\" collector", false);
     TCLAP::SwitchArg noout("n", "noOutput", "Don't write out any alignments (for speed testing purposes)", false);
+    TCLAP::SwitchArg strict("s", "strictCheck", "Perform extra checks to try and assure that only equally \"best\" mappings for a read are reported", false);
     cmd.add(index);
     cmd.add(noout);
 
@@ -321,7 +325,7 @@ int rapMapSAMap(int argc, char* argv[]) {
     cmd.add(outname);
     cmd.add(numThreads);
     cmd.add(maxNumHits);
-    cmd.add(endCollectorSwitch);
+    cmd.add(strict);
 
     auto consoleSink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
     auto consoleLog = spdlog::create("stderrLog", {consoleSink});
@@ -410,6 +414,7 @@ int rapMapSAMap(int argc, char* argv[]) {
 	    rapmap::utils::writeSAMHeader(rmi, outLog);
 	}
 
+    bool strictCheck = strict.getValue();
 	SpinLockT iomutex;
 	{
 	    ScopedTimer timer;
@@ -448,7 +453,8 @@ int rapMapSAMap(int argc, char* argv[]) {
             			outLog,
                         std::ref(hctrs),
                         maxNumHits.getValue(),
-                        noout.getValue());
+                        noout.getValue(),
+                        strictCheck);
             }
 
             for (auto& t : threads) { t.join(); }
@@ -476,13 +482,14 @@ int rapMapSAMap(int argc, char* argv[]) {
             			outLog,
                         std::ref(hctrs),
                         maxNumHits.getValue(),
-                        noout.getValue());
+                        noout.getValue(),
+                        strictCheck);
             }
             for (auto& t : threads) { t.join(); }
         }
 	std::cerr << "\n\n";
-    
-        
+
+
     consoleLog->info("Done mapping reads.");
     consoleLog->info("In total saw {} reads.", hctrs.numReads);
     consoleLog->info("Final # hits per read = {}", hctrs.totHits / static_cast<float>(hctrs.numReads));

@@ -24,11 +24,11 @@ namespace rapmap {
                 bool isFwd = (hitRC == txpRC);
                 int32_t hitPos = 0;
                 // The read maps to the target in the forward orientation
-                if (isFwd) {
+                //if (isFwd) {
                     hitPos = firstHit.txpPosInfo.pos() - firstHit.queryPos;
-                } else { // The read maps to the target in the reverse complement orientation
-                    hitPos = firstHit.txpPosInfo.pos() + firstHit.queryPos;
-                }
+                //} else { // The read maps to the target in the reverse complement orientation
+                //    hitPos = firstHit.txpPosInfo.pos() + firstHit.queryPos;
+                //}
 
                 // determine forward
                 hits.emplace_back(tid, hitPos, isFwd, readLen);
@@ -46,35 +46,33 @@ namespace rapmap {
                         uint32_t maxDist,
                         std::vector<QuasiAlignment>& hits,
                         MateStatus mateStatus){
-                bool foundHit{false};
-                // One processed hit per transcript
-	            auto startOffset = hits.size();
-                for (auto& ph : processedHits) {
-                        // If this is an *active* position list
-                        if (ph.second.active) {
-                                auto tid = ph.first;
-				auto minPosIt = std::min_element(ph.second.tqvec.begin(),
-						ph.second.tqvec.end(),
-						[](const SATxpQueryPos& a, const SATxpQueryPos& b) -> bool {
-						    return a.pos < b.pos;
-						});
-                                bool hitRC = minPosIt->queryRC;
-                                int32_t hitPos = minPosIt->pos - minPosIt->queryPos;
-                                bool isFwd = !hitRC;
-                                hits.emplace_back(tid, hitPos, isFwd, readLen);
-                                hits.back().mateStatus = mateStatus;
-                        }
+            bool foundHit{false};
+            // One processed hit per transcript
+            auto startOffset = hits.size();
+            for (auto& ph : processedHits) {
+                // If this is an *active* position list
+                if (ph.second.active) {
+                    auto tid = ph.first;
+                    auto minPosIt = std::min_element(ph.second.tqvec.begin(),
+                            ph.second.tqvec.end(),
+                            [](const SATxpQueryPos& a, const SATxpQueryPos& b) -> bool {
+                            return a.pos < b.pos;
+                            });
+                    bool hitRC = minPosIt->queryRC;
+                    // NOTE: Because of the way we calculate the
+                    // query position (closes point of the query from the
+                    // "left" end of the read, regardless of if the read
+                    // is in the forward or rc direction, we don't need
+                    // special / different logic for the forward and
+                    // rc directions here (I think).
+                    int32_t hitPos = minPosIt->pos - minPosIt->queryPos;
+                    bool isFwd = !hitRC;
+                    hits.emplace_back(tid, hitPos, isFwd, readLen);
+                    hits.back().mateStatus = mateStatus;
                 }
-                // if SAHitMap is sorted, no need to sort here
-                /*
-                std::sort(hits.begin() + startOffset, hits.end(),
-                                [](const QuasiAlignment& a, const QuasiAlignment& b) -> bool {
-                                return a.tid < b.tid;
-                                });
-                                */
-                return true;
+            }
+            return true;
         }
-
 
         // Return hits from processedHits where position constraints
         // match maxDist
