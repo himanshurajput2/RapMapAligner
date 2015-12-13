@@ -11,6 +11,12 @@
 class SACollector {
     public:
 
+	void printSAHits(rapmap::utils::SAIntervalHit hit) {
+		std::cout << "Printing Hits\n";
+		std::cout << "hit.lenIn " << hit.len << std::endl;
+		std::cout << "hit.queryPosIn " << hit.queryPos << std::endl;
+		std::cout << std::endl;
+	}
     SACollector(RapMapSAIndex* rmi) : rmi_(rmi) {}
 
 		bool operator()(std::string& read,
@@ -478,7 +484,25 @@ class SACollector {
         auto fwdHitsStart = hits.size();
         // If we had > 1 forward hit
         if (fwdSAInts.size() > 1) {
-            auto processedHits = rapmap::hit_manager::intersectSAHits(fwdSAInts, *rmi_);
+			auto processedHits = rapmap::hit_manager::intersectSAHits(fwdSAInts, *rmi_);
+		for(std::map<int, rapmap::utils::ProcessedSAHit>::iterator iter = processedHits.begin(); iter != processedHits.end(); ++iter) {
+				int k =  iter->first;
+				std::cout << "Value here is: " << k << std::endl;
+				rapmap::utils::ProcessedSAHit val = iter->second;
+
+				std::vector<rapmap::utils::SATxpQueryPos> myVec = val.tqvec;
+				for(int i=0;i<myVec.size();i++) {
+					// Append fwdSAInts[i].len number of M's to cigar
+					std::cout << "Genome position:" << myVec[i].pos << std::endl;
+					std::cout << "Query position:" << myVec[i].queryPos << std::endl;
+					// We take fwdSAInts.length and add M*fwdSAInts.length to cigar string
+					// We run Aligner here and update the M/D/I/S counts
+				}
+				std::string s = "CIGAR";
+				iter->second.cigar_string = s;
+				for(int i=0;i<myVec.size();i++)
+					printSAHits(fwdSAInts[i]);
+			}
             rapmap::hit_manager::collectHitsSimpleSA(processedHits, readLen, maxDist, hits, mateStatus);
         } else if (fwdSAInts.size() == 1) { // only 1 hit!
             auto& saIntervalHit = fwdSAInts.front();
