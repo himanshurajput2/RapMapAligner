@@ -245,7 +245,8 @@ namespace rapmap {
 		fwd(true),
 		readLen(std::numeric_limits<uint32_t>::max()),
 		fragLen(std::numeric_limits<uint32_t>::max()),
-		isPaired(false)
+		isPaired(false),
+        cigar_string("")
 #ifdef RAPMAP_SALMON_SUPPORT
         ,format(LibraryFormat::formatFromID(0))
 #endif // RAPMAP_SALMON_SUPPORT
@@ -254,10 +255,12 @@ namespace rapmap {
         QuasiAlignment(uint32_t tidIn, uint32_t posIn,
                 bool fwdIn, uint32_t readLenIn,
                 uint32_t fragLenIn = 0,
-                bool isPairedIn = false) :
+                bool isPairedIn = false,
+                std::string cigar_string = "") :
             tid(tidIn), pos(posIn), fwd(fwdIn),
-            readLen(readLenIn), fragLen(fragLenIn),
-            isPaired(isPairedIn)
+            readLen(readLenIn),
+            fragLen(fragLenIn), isPaired(isPairedIn),
+            cigar_string(cigar_string)
 #ifdef RAPMAP_SALMON_SUPPORT
         ,format(LibraryFormat::formatFromID(0))
 #endif // RAPMAP_SALMON_SUPPORT
@@ -301,6 +304,7 @@ namespace rapmap {
         // Is this a paired *alignment* or not
         bool isPaired;
         MateStatus mateStatus;
+        std::string cigar_string;
     };
 
     struct HitInfo {
@@ -335,8 +339,8 @@ namespace rapmap {
     struct ProcessedSAHit {
 	    ProcessedSAHit() : tid(std::numeric_limits<uint32_t>::max()), active(false), numActive(1) {}
 
-	    ProcessedSAHit(uint32_t txpIDIn, uint32_t txpPosIn, uint32_t queryPosIn, bool queryRCIn) :
-		    tid(txpIDIn), active(false), numActive(1)
+	    ProcessedSAHit(uint32_t txpIDIn, uint32_t txpPosIn, uint32_t queryPosIn, bool queryRCIn, std::string cigarString = "") :
+		    tid(txpIDIn), active(false), numActive(1), cigar_string(cigarString)
 	    {
 		tqvec.emplace_back(txpPosIn, queryPosIn, queryRCIn);
 	    }
@@ -345,6 +349,7 @@ namespace rapmap {
 	    std::vector<SATxpQueryPos> tqvec;
             bool active;
 	    uint32_t numActive;
+		std::string cigar_string;
     };
 
     struct SAHitInfo {
@@ -424,8 +429,10 @@ namespace rapmap {
     // Declarations for functions dealing with SAM formatting and output
     //
     inline void adjustOverhang(int32_t& pos, uint32_t readLen,
+            std::string cigar_string,
 		    uint32_t txpLen, FixedWriter& cigarStr) {
 	    cigarStr.clear();
+        //cigarStr.write(cigar_string);
 	    if (pos + readLen < 0) {
             cigarStr.write("{}S", readLen);
             pos = 0;
@@ -449,17 +456,17 @@ namespace rapmap {
     inline void adjustOverhang(QuasiAlignment& qa, uint32_t txpLen,
 		    FixedWriter& cigarStr1, FixedWriter& cigarStr2) {
 	    if (qa.isPaired) { // both mapped
-		    adjustOverhang(qa.pos, qa.readLen, txpLen, cigarStr1);
-		    adjustOverhang(qa.matePos, qa.mateLen, txpLen, cigarStr2);
+		    adjustOverhang(qa.pos, qa.readLen, qa.cigar_string, txpLen, cigarStr1);
+		    adjustOverhang(qa.matePos, qa.mateLen, qa.cigar_string, txpLen, cigarStr2);
 	    } else if (qa.mateStatus == MateStatus::PAIRED_END_LEFT ) {
 		    // left read mapped
-		    adjustOverhang(qa.pos, qa.readLen, txpLen, cigarStr1);
+		    adjustOverhang(qa.pos, qa.readLen, qa.cigar_string, txpLen, cigarStr1);
 		    // right read un-mapped will just be read length * S
 		    cigarStr2.clear();
 		    cigarStr2.write("{}S", qa.mateLen);
 	    } else if (qa.mateStatus == MateStatus::PAIRED_END_RIGHT) {
 		    // right read mapped
-		    adjustOverhang(qa.pos, qa.readLen, txpLen, cigarStr2);
+		    adjustOverhang(qa.pos, qa.readLen, qa.cigar_string, txpLen, cigarStr2);
 		    // left read un-mapped will just be read length * S
 		    cigarStr1.clear();
 		    cigarStr1.write("{}S", qa.readLen);

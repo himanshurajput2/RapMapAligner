@@ -132,8 +132,7 @@ namespace rapmap {
                         readSeq = &(readTemp);
                         qstr = &(qualTemp);
                     }
-
-                   rapmap::utils::adjustOverhang(qa.pos, qa.readLen, txpLens[qa.tid], cigarStr);
+                   rapmap::utils::adjustOverhang(qa.pos, qa.readLen, qa.cigar_string, txpLens[qa.tid], cigarStr);
 
                     sstream << readName.c_str() << '\t' // QNAME
                         << flags << '\t' // FLAGS
@@ -376,7 +375,7 @@ namespace rapmap {
                         }
                         */
 
-                        rapmap::utils::adjustOverhang(qa.pos, qa.readLen, txpLens[qa.tid], *cigarStr);
+                        rapmap::utils::adjustOverhang(qa.pos, qa.readLen, qa.cigar_string, txpLens[qa.tid], *cigarStr);
                         sstream << alignedName->c_str() << '\t' // QNAME
                                 << flags << '\t' // FLAGS
                                 << transcriptName << '\t' // RNAME
