@@ -11,6 +11,128 @@
 class SACollector {
     public:
 
+	int SGetMax(int i, int j, char *Seq1, char *Seq2,int M , int N, int** arr, int** type,int GapPenality) {
+            int Sim;
+            int Similar = 10;
+            int NonSimilar =3;
+            int Gap = GapPenality;
+            if ((char)Seq1[i-1] == (char)Seq2[j-1])
+                Sim = Similar;
+            else
+                Sim = NonSimilar;
+
+            int M1, M2, M3;
+            M1 = arr[i - 1][j - 1] + Sim;
+            M2 = arr[i][j - 1] + Gap;
+            M3 = arr[i - 1][j] + Gap;
+            int max = M1 >= M2 ? M1 : M2;
+            int Mmax = M3 >= max ? M3 : max;
+
+            if (Mmax == M1 && Sim == Similar)
+                type[i][j] = 1;//Match
+            else if (Mmax == M1 && Sim == NonSimilar)
+                type[i][j] = 2;//Mismatch
+            else if (Mmax == M2)
+                type[i][j] = 3;//Gap in row string
+            else if (Mmax == M3)
+                type[i][j] = 4;//== delete for row ,Gap in column string , this is equal to a deletion of a character from row string
+            return Mmax;
+    }
+
+	
+    char *SAligner(char *str1, char *str2, int start1, int start2, int M, int N) {
+            int **arr = NULL;
+            int **type = NULL;
+            char *str = NULL;
+            char *cigar = NULL;
+            int len = 0;
+            int x=0;
+            int Gap = 1;
+            int count =0;
+            int i =0, j =0;
+            char buff[6];
+
+            arr = (int**)(malloc((M+1)*sizeof(int*)));
+            type = (int**)(malloc((M+1)*sizeof(int*)));
+            str = (char*)(malloc((M+N+1)*sizeof(char)));
+            cigar  = (char*)(malloc((M+N+1)*sizeof(char)));
+
+            memset(str,'\0',M+N+1);
+            memset(cigar,'\0',M+N+1);
+            for(i =0 ;i < M+1;i++) {
+                arr[i] = (int*)(malloc((N+1)*sizeof(int)));
+                type[i] = (int*)(malloc((N+1)*sizeof(int)));
+            }
+            for(i =0 ;i < M+1;i++)
+                for(int j=0; j<N+1 ;j++)
+                {
+                    arr[i][j] = 0;
+                    type[i][j] = 0;
+                }
+
+            for(i = 0; i < N+1 ; i++)
+                arr[0][i] =  i*Gap;
+
+            for(i = 0; i < M+1 ; i++)
+                arr[i][0] =  i*Gap;
+
+            for(i = 1; i < M+1; i++)
+                for ( j = 1; j < N+1; j++)
+                    arr[i][j] = SGetMax(i, j, str1+start1, str2+ start2,M,N, arr, type,Gap); //gap =3
+
+//Initialization done
+            for(i = M; i>0;)
+            for(int j= N ;i>0 && j>0 ;)
+            {
+                if (type[i][j] == 1) {
+                    i--;j--;//Match
+                    strcat(str,"M");
+                } else if (type[i][j] == 2) {
+                    i--;j--;//Mismatch
+                    strcat(str,"X");
+                } else if(type[i][j] == 3) {
+                    j--;//gap in row
+                    strcat(str,"I");
+                } else if(type[i][j] == 4) {
+                    i--;//Gap in column string , this is equal to a deletion of a character from row string
+                    strcat(str,"D");
+                }
+            }
+	     char *p1, *p2;
+
+         if (!(! str || ! *str)) {
+              for(p1 = str, p2 = str + strlen(str) - 1; p2 > p1; ++p1, --p2) {	
+                    *p1 ^= *p2;
+                    *p2 ^= *p1;
+                    *p1 ^= *p2;
+                }
+	      }
+        len = strlen(str);
+
+        for( i= 0,j=0;i<len;) {
+            count = 0;
+            while(str[i] == str[j]) {
+                count++;
+                i++;
+            }
+	        sprintf(buff, "%d", count);
+            strcat(cigar,buff);
+            x = strlen(cigar);
+            cigar[x++]=str[j];
+            cigar[x]='\0';
+            j= i;
+        }
+        for(int i =0 ;i < M+1;i++) {
+              free(arr[i]);
+              free(type[i]);
+        }
+              free(type);
+              free(arr);
+              free(str);
+              return cigar;
+    }
+
+
 	void printSAHits(rapmap::utils::SAIntervalHit hit) {
 		std::cout << "Printing Hits\n";
 		std::cout << "hit.lenIn " << hit.len << std::endl;
@@ -486,6 +608,7 @@ class SACollector {
         if (fwdSAInts.size() > 1) {
 			auto processedHits = rapmap::hit_manager::intersectSAHits(fwdSAInts, *rmi_);
 		for(std::map<int, rapmap::utils::ProcessedSAHit>::iterator iter = processedHits.begin(); iter != processedHits.end(); ++iter) {
+                char *c = NULL;
 				int k =  iter->first;
 				std::cout << "Value here is: " << k << std::endl;
 				rapmap::utils::ProcessedSAHit val = iter->second;
@@ -493,13 +616,23 @@ class SACollector {
 				std::vector<rapmap::utils::SATxpQueryPos> myVec = val.tqvec;
 				for(int i=0;i<myVec.size();i++) {
 					// Append fwdSAInts[i].len number of M's to cigar
+
 					std::cout << "Genome position:" << myVec[i].pos << std::endl;
 					std::cout << "Query position:" << myVec[i].queryPos << std::endl;
+                    #if 0
+                    char *str1 = "ACCCCC";
+                    char *str2 = "ACCCCCT";
+                   int M = strlen(str1);
+                   int N = strlen(str2);
+                  /* CHANGE HERE FOR ACTUAL STRING */
+                    c =  SAligner(str1, str2, 0, 0, M, N);
+                    std::cout << "CIGAR STRING " << c << "\n";
+                    #endif
 					// We take fwdSAInts.length and add M*fwdSAInts.length to cigar string
 					// We run Aligner here and update the M/D/I/S counts
 				}
-				std::string s = "CIGAR";
-				iter->second.cigar_string = s;
+				iter->second.cigar_string = c;
+                free(c);
 				for(int i=0;i<myVec.size();i++)
 					printSAHits(fwdSAInts[i]);
 			}
