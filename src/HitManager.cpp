@@ -1,16 +1,25 @@
 #include "HitManager.hpp"
+#include <iostream>
 #include <type_traits>
 
 namespace rapmap {
     namespace hit_manager {
     	// Return hits from processedHits where position constraints
         // match maxDist
+		void printSAHits(rapmap::utils::SAIntervalHit hit)
+		{
+			std::cout << "Printing Inside Hitmnagaers\n";
+			std::cout << "hit.lenIn " << hit.len << std::endl;
+			std::cout << "hit.queryPosIn " << hit.queryPos << std::endl;
+			std::cout << std::endl;
+		}
         bool collectHitsSimple(std::vector<ProcessedHit>& processedHits,
                 uint32_t readLen,
                 uint32_t maxDist,
                 std::vector<QuasiAlignment>& hits,
                 MateStatus mateStatus){
             bool foundHit{false};
+
             // One processed hit per transcript
             for (auto& ph : processedHits) {
                 auto tid = ph.tid;
@@ -47,6 +56,7 @@ namespace rapmap {
                         std::vector<QuasiAlignment>& hits,
                         MateStatus mateStatus){
             bool foundHit{false};
+
             // One processed hit per transcript
             auto startOffset = hits.size();
             for (auto& ph : processedHits) {
@@ -67,7 +77,9 @@ namespace rapmap {
                     // rc directions here (I think).
                     int32_t hitPos = minPosIt->pos - minPosIt->queryPos;
                     bool isFwd = !hitRC;
-                    hits.emplace_back(tid, hitPos, isFwd, readLen);
+                    /* Cigar String here comes from value in the SAHitMap which is
+                    a mapping of transcipt id vs ProcessedSAHit */
+                    hits.emplace_back(tid, hitPos, isFwd, readLen, 0, false, ph.second.cigar_string);
                     hits.back().mateStatus = mateStatus;
                 }
             }
@@ -579,6 +591,8 @@ namespace rapmap {
                 RapMapSAIndex& rmi
                 ) {
 
+			for(int i=0;i<inHits.size();i++)
+				printSAHits(inHits[i]);
             // Each inHit is a SAIntervalHit structure that contains
             // an SA interval with all hits for a particuar query location
             // on the read.
