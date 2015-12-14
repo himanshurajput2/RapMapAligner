@@ -53,9 +53,7 @@ class SACollector {
             char buff[6];
 			
             cigar  = (char*)(malloc((M+N+1)*sizeof(char)));
-            str = (char*)(malloc((M+N+1)*sizeof(char)));
 
-            memset(str,'\0',M+N+1);
             memset(cigar,'\0',M+N+1);
     		if(0==M && 0 != N) // 1st string blank
 	    	{
@@ -64,13 +62,15 @@ class SACollector {
 		        return cigar;
 		    } else if (0 == N && 0!=M) {
 		        sprintf(cigar, "%d", M); 
-		        strcat(cigar, "X");
+		        strcat(cigar, "D");
 			    return cigar;
 		    }
 
-
             arr = (int**)(malloc((M+1)*sizeof(int*)));
             type = (int**)(malloc((M+1)*sizeof(int*)));
+            str = (char*)(malloc((M+N+1)*sizeof(char)));
+
+            memset(str,'\0',M+N+1);
 
             for(i =0 ;i < M+1;i++) {
                 arr[i] = (int*)(malloc((N+1)*sizeof(int)));
@@ -111,6 +111,18 @@ class SACollector {
                     strcat(str,"D");
                 }
             }
+
+            while(i>0)
+            {
+                strcat(str,"D");
+                i--;
+            }
+            while(j>0)
+            {
+                strcat(str,"I");
+                j--;
+            }
+
 	     char *p1, *p2;
 
          if (!(! str || ! *str)) {
