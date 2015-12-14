@@ -610,29 +610,53 @@ class SACollector {
 		for(std::map<int, rapmap::utils::ProcessedSAHit>::iterator iter = processedHits.begin(); iter != processedHits.end(); ++iter) {
                 char *c = NULL;
 				int k =  iter->first;
-				std::cout << "Value here is: " << k << std::endl;
-				rapmap::utils::ProcessedSAHit val = iter->second;
 
+				std::cout << "read is " << read << std::endl;
+				std::string transcript = rmi_->seq.substr(rmi_->txpOffsets[k], rmi_->txpLens[k]);
+				std::cout << "Transcript is " << transcript << std::endl;
+				std::string cigar = "";
+				rapmap::utils::ProcessedSAHit val = iter->second;
+				int transcriptAlignStart = 0, transcriptAlignEnd = 0, queryAlignStart = 0, queryAlignEnd = 0;
 				std::vector<rapmap::utils::SATxpQueryPos> myVec = val.tqvec;
 				for(int i=0;i<myVec.size();i++) {
 					// Append fwdSAInts[i].len number of M's to cigar
 
 					std::cout << "Genome position:" << myVec[i].pos << std::endl;
 					std::cout << "Query position:" << myVec[i].queryPos << std::endl;
-                    #if 0
-                    char *str1 = "ACCCCC";
-                    char *str2 = "ACCCCCT";
-                   int M = strlen(str1);
-                   int N = strlen(str2);
-                  /* CHANGE HERE FOR ACTUAL STRING */
-                    c =  SAligner(str1, str2, 0, 0, M, N);
-                    std::cout << "CIGAR STRING " << c << "\n";
-                    #endif
+
+					transcriptAlignEnd = myVec[i].pos;
+					queryAlignEnd = myVec[i].queryPos;
+
+					// Call Aigner
+
+					if(queryAlignEnd < queryAlignStart || transcriptAlignEnd < transcriptAlignStart) continue;
+					else {
+						// Add as many Number of M's as the fwdSAInts[i]
+						std::cout << "queryAlignStart: " << queryAlignStart << std::endl;
+						std::cout << "queryAlignEnd: " << queryAlignEnd << std::endl;
+						std::cout << "transcriptAlignStart: " << transcriptAlignStart << std::endl;
+						std::cout << "transcriptAlignEnd: " << transcriptAlignEnd<< std::endl;
+
+						c = SAligner(const_cast<char*>(read.c_str()), const_cast<char*>(transcript.c_str()), queryAlignStart, transcriptAlignStart,
+								queryAlignEnd - queryAlignStart, transcriptAlignEnd - transcriptAlignStart);
+						std::cout << "From Aligner" << c << std::endl;
+						//std::string temp(c);
+						//cigar = cigar + temp;
+						cigar = cigar + std::to_string(fwdSAInts[i].len) + "M";
+						transcriptAlignStart = transcriptAlignEnd + fwdSAInts[i].len;
+						queryAlignStart = queryAlignEnd + fwdSAInts[i].len;
+					}
+					std::cout << "queryAlignStart: " << queryAlignStart << std::endl;
+					std::cout << "queryAlignEnd: " << queryAlignEnd << std::endl;
+					std::cout << "transcriptAlignStart: " << transcriptAlignStart << std::endl;
+					std::cout << "transcriptAlignEnd: " << transcriptAlignEnd<< std::endl;
+					
 					// We take fwdSAInts.length and add M*fwdSAInts.length to cigar string
 					// We run Aligner here and update the M/D/I/S counts
 				}
-				iter->second.cigar_string = c;
-                free(c);
+				
+				iter->second.cigar_string = cigar;
+                //free(c);
 				for(int i=0;i<myVec.size();i++)
 					printSAHits(fwdSAInts[i]);
 			}
