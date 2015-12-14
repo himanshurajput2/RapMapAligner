@@ -651,17 +651,13 @@ class SACollector {
 
 						c = SAligner(const_cast<char*>(read.c_str()), const_cast<char*>(transcript.c_str()), queryAlignStart, transcriptAlignStart,
 								queryAlignEnd - queryAlignStart, transcriptAlignEnd - transcriptAlignStart);
-						std::cout << "From Aligner" << c << std::endl;
-						//std::string temp(c);
+						if(c!=NULL)
+							std::cout << "From ALigner" << c << std::endl;//std::string temp(c);
 						//cigar = cigar + temp;
 						cigar = cigar + std::to_string(fwdSAInts[i].len) + "M";
 						transcriptAlignStart = transcriptAlignEnd + fwdSAInts[i].len;
 						queryAlignStart = queryAlignEnd + fwdSAInts[i].len;
 					}
-					std::cout << "queryAlignStart: " << queryAlignStart << std::endl;
-					std::cout << "queryAlignEnd: " << queryAlignEnd << std::endl;
-					std::cout << "transcriptAlignStart: " << transcriptAlignStart << std::endl;
-					std::cout << "transcriptAlignEnd: " << transcriptAlignEnd<< std::endl;
 					
 					// We take fwdSAInts.length and add M*fwdSAInts.length to cigar string
 					// We run Aligner here and update the M/D/I/S counts
