@@ -12,6 +12,15 @@ class SACollector {
     public:
 
 	int SGetMax(int i, int j, char *Seq1, char *Seq2,int M , int N, int** arr, int** type,int GapPenality) {
+			printf("\n");
+			printf("sequence 1 \n");
+			for(int a=0 ; a< M; a++)
+				printf("%c",Seq1[a]);
+			printf("\n");
+			printf("sequence 2 \n");
+			for(int a=0 ; a<N; a++)
+				printf("%c", Seq2[a]);
+			printf("\n");
             int Sim;
             int Similar = 10;
             int NonSimilar =3;
@@ -41,6 +50,12 @@ class SACollector {
 
 	
     char *SAligner(char *str1, char *str2, int start1, int start2, int M, int N) {
+			std::cout << "Read is " << str1 << std::endl;
+			std::cout << "Transctipt " << str2 << std::endl;
+			std::cout << "Query Start is " << start1 << std::endl;
+			std::cout << "Transcript start is " << start2 << std::endl;
+			std::cout << "Read length is " << M << std::endl;
+			std::cout << "Transcript length is " << N << std::endl;
             int **arr = NULL;
             int **type = NULL;
             char *str = NULL;
@@ -51,25 +66,30 @@ class SACollector {
             int count =0;
             int i =0, j =0;
             char buff[6];
-
+			
             cigar  = (char*)(malloc((M+N+1)*sizeof(char)));
+            str = (char*)(malloc((M+N+1)*sizeof(char)));
 
             memset(str,'\0',M+N+1);
             memset(cigar,'\0',M+N+1);
+			printf(" \n check 1");
     		if(0==M && 0 != N) // 1st string blank
 	    	{
 		        sprintf(cigar, "%d", N); 
 		        strcat(cigar,"I");
+				printf("cigar = %s", cigar);
 		        return cigar;
 		    } else if (0 == N && 0!=M) {
 		        sprintf(cigar, "%d", M); 
-		        strcat(cigar,"D");
-		        return cigar;
+		        strcat(cigar, "X");
+				printf("cigar = %s", cigar);
+			    return cigar;
 		    }
 
+
+			printf("check 2");
             arr = (int**)(malloc((M+1)*sizeof(int*)));
             type = (int**)(malloc((M+1)*sizeof(int*)));
-            str = (char*)(malloc((M+N+1)*sizeof(char)));
 
             for(i =0 ;i < M+1;i++) {
                 arr[i] = (int*)(malloc((N+1)*sizeof(int)));
@@ -141,6 +161,7 @@ class SACollector {
               free(type);
               free(arr);
               free(str);
+			std::cout << "Cigar is " << cigar << std::endl;
               return cigar;
     }
 
@@ -616,6 +637,8 @@ class SACollector {
            */
 
         auto fwdHitsStart = hits.size();
+
+		std::string cigar = "";
         // If we had > 1 forward hit
         if (fwdSAInts.size() > 1) {
 			auto processedHits = rapmap::hit_manager::intersectSAHits(fwdSAInts, *rmi_);
@@ -623,10 +646,7 @@ class SACollector {
                 char *c = NULL;
 				int k =  iter->first;
 
-				std::cout << "read is " << read << std::endl;
 				std::string transcript = rmi_->seq.substr(rmi_->txpOffsets[k], rmi_->txpLens[k]);
-				std::cout << "Transcript is " << transcript << std::endl;
-				std::string cigar = "";
 				rapmap::utils::ProcessedSAHit val = iter->second;
 				int transcriptAlignStart = 0, transcriptAlignEnd = 0, queryAlignStart = 0, queryAlignEnd = 0;
 				std::vector<rapmap::utils::SATxpQueryPos> myVec = val.tqvec;
@@ -651,20 +671,17 @@ class SACollector {
 
 						c = SAligner(const_cast<char*>(read.c_str()), const_cast<char*>(transcript.c_str()), queryAlignStart, transcriptAlignStart,
 								queryAlignEnd - queryAlignStart, transcriptAlignEnd - transcriptAlignStart);
-						if(c!=NULL)
-							std::cout << "From ALigner" << c << std::endl;//std::string temp(c);
-						//cigar = cigar + temp;
+						cigar = cigar + std::string (c);
 						cigar = cigar + std::to_string(fwdSAInts[i].len) + "M";
 						transcriptAlignStart = transcriptAlignEnd + fwdSAInts[i].len;
 						queryAlignStart = queryAlignEnd + fwdSAInts[i].len;
 					}
-					
+
 					// We take fwdSAInts.length and add M*fwdSAInts.length to cigar string
 					// We run Aligner here and update the M/D/I/S counts
 				}
-				
 				iter->second.cigar_string = cigar;
-                //free(c);
+                free(c);
 				for(int i=0;i<myVec.size();i++)
 					printSAHits(fwdSAInts[i]);
 			}
