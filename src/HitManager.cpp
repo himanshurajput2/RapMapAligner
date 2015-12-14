@@ -591,8 +591,8 @@ namespace rapmap {
                 RapMapSAIndex& rmi
                 ) {
 
-			for(int i=0;i<inHits.size();i++)
-				printSAHits(inHits[i]);
+			//for(int i=0;i<inHits.size();i++)
+			//	printSAHits(inHits[i]);
             // Each inHit is a SAIntervalHit structure that contains
             // an SA interval with all hits for a particuar query location
             // on the read.

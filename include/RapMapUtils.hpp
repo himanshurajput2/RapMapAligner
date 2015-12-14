@@ -432,8 +432,8 @@ namespace rapmap {
             std::string cigar_string,
 		    uint32_t txpLen, FixedWriter& cigarStr) {
 	    cigarStr.clear();
-        //cigarStr.write(cigar_string);
-	    if (pos + readLen < 0) {
+        cigarStr.write(cigar_string);
+	    /*if (pos + readLen < 0) {
             cigarStr.write("{}S", readLen);
             pos = 0;
         } else if (pos < 0) {
@@ -450,7 +450,7 @@ namespace rapmap {
 		    cigarStr.write("{}M{}S", matchLen, clipLen);
 	    } else {
 		    cigarStr.write("{}M", readLen);
-	    }
+	    }*/
     }
 
     inline void adjustOverhang(QuasiAlignment& qa, uint32_t txpLen,

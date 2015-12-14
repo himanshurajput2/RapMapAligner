@@ -12,15 +12,6 @@ class SACollector {
     public:
 
 	int SGetMax(int i, int j, char *Seq1, char *Seq2,int M , int N, int** arr, int** type,int GapPenality) {
-			printf("\n");
-			printf("sequence 1 \n");
-			for(int a=0 ; a< M; a++)
-				printf("%c",Seq1[a]);
-			printf("\n");
-			printf("sequence 2 \n");
-			for(int a=0 ; a<N; a++)
-				printf("%c", Seq2[a]);
-			printf("\n");
             int Sim;
             int Similar = 10;
             int NonSimilar =3;
@@ -50,12 +41,6 @@ class SACollector {
 
 	
     char *SAligner(char *str1, char *str2, int start1, int start2, int M, int N) {
-			std::cout << "Read is " << str1 << std::endl;
-			std::cout << "Transctipt " << str2 << std::endl;
-			std::cout << "Query Start is " << start1 << std::endl;
-			std::cout << "Transcript start is " << start2 << std::endl;
-			std::cout << "Read length is " << M << std::endl;
-			std::cout << "Transcript length is " << N << std::endl;
             int **arr = NULL;
             int **type = NULL;
             char *str = NULL;
@@ -72,22 +57,18 @@ class SACollector {
 
             memset(str,'\0',M+N+1);
             memset(cigar,'\0',M+N+1);
-			printf(" \n check 1");
     		if(0==M && 0 != N) // 1st string blank
 	    	{
 		        sprintf(cigar, "%d", N); 
 		        strcat(cigar,"I");
-				printf("cigar = %s", cigar);
 		        return cigar;
 		    } else if (0 == N && 0!=M) {
 		        sprintf(cigar, "%d", M); 
 		        strcat(cigar, "X");
-				printf("cigar = %s", cigar);
 			    return cigar;
 		    }
 
 
-			printf("check 2");
             arr = (int**)(malloc((M+1)*sizeof(int*)));
             type = (int**)(malloc((M+1)*sizeof(int*)));
 
@@ -161,7 +142,6 @@ class SACollector {
               free(type);
               free(arr);
               free(str);
-			std::cout << "Cigar is " << cigar << std::endl;
               return cigar;
     }
 
@@ -638,14 +618,14 @@ class SACollector {
 
         auto fwdHitsStart = hits.size();
 
-		std::string cigar = "";
+		std::string cigar;
         // If we had > 1 forward hit
         if (fwdSAInts.size() > 1) {
 			auto processedHits = rapmap::hit_manager::intersectSAHits(fwdSAInts, *rmi_);
 		for(std::map<int, rapmap::utils::ProcessedSAHit>::iterator iter = processedHits.begin(); iter != processedHits.end(); ++iter) {
                 char *c = NULL;
 				int k =  iter->first;
-
+				cigar = "";
 				std::string transcript = rmi_->seq.substr(rmi_->txpOffsets[k], rmi_->txpLens[k]);
 				rapmap::utils::ProcessedSAHit val = iter->second;
 				int transcriptAlignStart = 0, transcriptAlignEnd = 0, queryAlignStart = 0, queryAlignEnd = 0;
@@ -653,8 +633,8 @@ class SACollector {
 				for(int i=0;i<myVec.size();i++) {
 					// Append fwdSAInts[i].len number of M's to cigar
 
-					std::cout << "Genome position:" << myVec[i].pos << std::endl;
-					std::cout << "Query position:" << myVec[i].queryPos << std::endl;
+					//std::cout << "Genome position:" << myVec[i].pos << std::endl;
+					//std::cout << "Query position:" << myVec[i].queryPos << std::endl;
 
 					transcriptAlignEnd = myVec[i].pos;
 					queryAlignEnd = myVec[i].queryPos;
@@ -664,10 +644,10 @@ class SACollector {
 					if(queryAlignEnd < queryAlignStart || transcriptAlignEnd < transcriptAlignStart) continue;
 					else {
 						// Add as many Number of M's as the fwdSAInts[i]
-						std::cout << "queryAlignStart: " << queryAlignStart << std::endl;
+						/*std::cout << "queryAlignStart: " << queryAlignStart << std::endl;
 						std::cout << "queryAlignEnd: " << queryAlignEnd << std::endl;
 						std::cout << "transcriptAlignStart: " << transcriptAlignStart << std::endl;
-						std::cout << "transcriptAlignEnd: " << transcriptAlignEnd<< std::endl;
+						std::cout << "transcriptAlignEnd: " << transcriptAlignEnd<< std::endl;*/
 
 						c = SAligner(const_cast<char*>(read.c_str()), const_cast<char*>(transcript.c_str()), queryAlignStart, transcriptAlignStart,
 								queryAlignEnd - queryAlignStart, transcriptAlignEnd - transcriptAlignStart);
@@ -675,15 +655,15 @@ class SACollector {
 						cigar = cigar + std::to_string(fwdSAInts[i].len) + "M";
 						transcriptAlignStart = transcriptAlignEnd + fwdSAInts[i].len;
 						queryAlignStart = queryAlignEnd + fwdSAInts[i].len;
+						free(c);
 					}
 
 					// We take fwdSAInts.length and add M*fwdSAInts.length to cigar string
 					// We run Aligner here and update the M/D/I/S counts
 				}
 				iter->second.cigar_string = cigar;
-                free(c);
-				for(int i=0;i<myVec.size();i++)
-					printSAHits(fwdSAInts[i]);
+				//for(int i=0;i<myVec.size();i++)
+				//	printSAHits(fwdSAInts[i]);
 			}
             rapmap::hit_manager::collectHitsSimpleSA(processedHits, readLen, maxDist, hits, mateStatus);
         } else if (fwdSAInts.size() == 1) { // only 1 hit!
